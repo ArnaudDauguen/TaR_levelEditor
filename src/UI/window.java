@@ -2,22 +2,40 @@ package UI;
 
 import java.awt.EventQueue;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import java.awt.BorderLayout;
+import java.awt.Button;
 import java.awt.Color;
 
 import javax.swing.JTextField;
 import javax.swing.border.LineBorder;
+
+import DTO.Dungeon;
+
+import javax.imageio.stream.ImageInputStream;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import java.awt.GridLayout;
-import java.awt.Image;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.swing.JLabel;
 import java.awt.event.ActionListener;
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.awt.event.ActionEvent;
 
 
@@ -49,7 +67,7 @@ public class window {
 	private ArrayList<JButton> iaEquipmentButtons = new ArrayList<>();
 	private int mapWidth = 10, mapHeight = 10, toolBoxWidth = 4, toolBoxHeigth = 9;
 
-	private JTextField dungeonName;
+	private JTextField dungeonNameTf;
 	private JTextField pageIndex;
 	private JTextField txtStuff;
 	private JTextField monsterTxtValue;
@@ -73,6 +91,10 @@ public class window {
 	private ArrayList<ImageIcon> otherIcon = new ArrayList<>();
 	
 	
+	
+	
+	//TODO temporary variables
+	private int nbInputRessourcesTmp = 7;
 	
 	/**
 	 * Launch the application.
@@ -103,8 +125,16 @@ public class window {
 	/**
 	 * TODO Call to API for various datas
 	 */
-	private void loadDatas() {
-		for(int i = 0; i < 12; i++) {
+	private boolean loadDatas() {
+		Map<String, String> parameters = new HashMap<>();
+		try {
+			fetchToApi("GET", "http://localhost:8080/ressources", parameters);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return false;
+		}
+		for(int i = 0; i < nbInputRessourcesTmp; i++) {
 			String path = "ressources/icon" + i + ".png";
 			File f = new File(path);
 			switch ((int) (Math.floor(Math.random() * 3))) {
@@ -126,6 +156,8 @@ public class window {
 		currentItemsIds = terrainIds;
 		currentItemsIcon = terrainIcon;
 		btnMenuTerrain.setEnabled(false);
+		
+		return true;
 	}
 	
 	private void installMap() {
@@ -162,34 +194,232 @@ public class window {
 		pickupPanel.repaint();
 	}
 	
-	private void fetchToApi(String uri) {
+	/*
+	 * Map<String, String> parameters = new HashMap<>() -> url parametres, ?limit=10&offset=10
+	 */
+	private void fetchToApi(String method, String inUrl, Map<String, String> parameters) throws Exception {
+		//Create params string
+		StringBuilder paramStringBuilder = new StringBuilder();
+        for (Map.Entry<String, String> entry : parameters.entrySet()) {
+          paramStringBuilder.append(URLEncoder.encode(entry.getKey(), "UTF-8"));
+          paramStringBuilder.append("=");
+          paramStringBuilder.append(URLEncoder.encode(entry.getValue(), "UTF-8"));
+          paramStringBuilder.append("&");
+        }
+        String paramString = paramStringBuilder.toString();
+        paramString = paramString.length() > 0 ? paramString.substring(0, paramString.length() - 1) : paramString;
+        
+        //Create Request
+		URL url = parameters.size() == 0 ? new URL(inUrl) : new URL(inUrl + "?" + paramString);
+		HttpURLConnection con = (HttpURLConnection) url.openConnection();
+		con.setRequestMethod(method);
+		
+        //Conf request
+		con.setRequestProperty("Content-Type", "application/json");
+		con.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:72.0) Gecko/20100101 Firefox/72.0");
+		con.setConnectTimeout(5000);
+		con.setReadTimeout(5000);
+		
+		
+		
+		//Read response
+		int status = con.getResponseCode();
+		InputStream bb = con.getInputStream();
+		InputStreamReader aa = new InputStreamReader(bb);
+		BufferedReader in = new BufferedReader(aa);
+		String inputLine;
+		StringBuffer content = new StringBuffer();
+		while ((inputLine = in.readLine()) != null) {
+		    content.append(inputLine);
+		}
+		in.close();
+		con.disconnect();
+		
+		
+		System.out.println(content.toString());
+
+		//TODO Parse json
+		
+		
+	}
+
+	
+	/*
+	 * Map<String, String> parameters = new HashMap<>() -> url parametres, ?limit=10&offset=10
+	 */
+	private void fetchToApi(String method, String inUrl, Map<String, String> parameters, String jsonBodyString) throws Exception {
+		//Create params string
+		StringBuilder paramStringBuilder = new StringBuilder();
+        for (Map.Entry<String, String> entry : parameters.entrySet()) {
+          paramStringBuilder.append(URLEncoder.encode(entry.getKey(), "UTF-8"));
+          paramStringBuilder.append("=");
+          paramStringBuilder.append(URLEncoder.encode(entry.getValue(), "UTF-8"));
+          paramStringBuilder.append("&");
+        }
+        String paramString = paramStringBuilder.toString();
+        paramString = paramString.length() > 0 ? paramString.substring(0, paramString.length() - 1) : paramString;
+        
+        //Create Request
+		URL url = parameters.size() == 0 ? new URL(inUrl) : new URL(inUrl + "?" + paramString);
+		HttpURLConnection con = (HttpURLConnection) (url).openConnection();
+        con.setDoInput(true);
+        con.setDoOutput(true);
+        con.setRequestMethod(method);
+        con.setRequestProperty("Content-Type", "application/json");
+        // linec.setRequestProperty("Authorization", "Bearer " + "1djCb/mXV+KtryMxr6i1bXw");
+
+//        OutputStreamWriter writer = new OutputStreamWriter(con.getOutputStream(), "UTF-8");
+//        writer.write("{\"userId\": 100,\"id\": 100,\"title\": \"main title\",\"body\": \"main body\"}");
+        con.getOutputStream().write(jsonBodyString.getBytes());
+		
+		
+        
+        
+        
+        
+        
+        BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+        String inputLine;
+
+        while ((inputLine = in.readLine()) != null)
+            System.out.println(inputLine);
+        in.close();
+        
+        
+        
+        /*
+		
+		//Read response
+		int status = con.getResponseCode();
+		InputStream bb = con.getInputStream();
+		InputStreamReader aa = new InputStreamReader(bb);
+		BufferedReader in = new BufferedReader(aa);
+		String inputLine;
+		StringBuffer content = new StringBuffer();
+		while ((inputLine = in.readLine()) != null) {
+		    content.append(inputLine);
+		}
+		in.close();
+		con.disconnect();
+		
+		
+		System.out.println(content.toString());
+
+		//TODO Parse json
+		*/
 		
 	}
 	
-	private void saveDungeon() {
+	private boolean saveDungeon() {
+		//save map
 		int[] dungeonCases = new int[mapHeight * mapWidth];
-		for (int i = 0; i < mapHeight * mapWidth; i++) {
-			dungeonCases[i] = Integer.parseInt(dungeonMapButtons.get(i).getActionCommand());
+		int[][] dungeonCasesForCheck = new int[mapHeight][mapWidth];
+		for (int i = 0; i < mapHeight; i++) {
+			for (int j = 0; j < mapWidth; i++) {
+				dungeonCases[i * j] = Integer.parseInt(dungeonMapButtons.get(i * j).getActionCommand());
+				dungeonCasesForCheck[i][j] = Integer.parseInt(dungeonMapButtons.get(i * j).getActionCommand());
+			}
 		}
 		
-		//TODO save equipment
-		ArrayList<Integer> dungeonEquipment = new ArrayList<Integer>();
+		int wallId = 1, entrenceId = 2, throneId = 3;
+		if(!Dungeon.isCompletable(dungeonCasesForCheck, mapHeight, mapWidth, entrenceId, throneId, wallId))
+			return false;
+		
+		//save equipment
+		ArrayList<Integer> dungeonEquipmentArray = new ArrayList<Integer>();
 		for(JButton bt : iaEquipmentButtons) {
 			if(bt.isEnabled()){
 				if(bt.getActionCommand() == "true") {
-					dungeonEquipment.add(iaEquipmentButtons.indexOf(bt));
+					dungeonEquipmentArray.add(iaEquipmentButtons.indexOf(bt));
 				}
 			}
 		}
-		if(dungeonEquipment.size() == 0) {
-			//TODO force chose at least one equipment
+		if(dungeonEquipmentArray.size() == 0) {
 			System.out.println("not enought equipment choosed");
+			return false;
+		}
+		//convert array to int[]
+		int[] dungeonEquipment = new int[dungeonEquipmentArray.size()];
+		for(int i = 0; i < dungeonEquipmentArray.size(); i++) {
+			dungeonEquipment[i] = dungeonEquipmentArray.get(i);
 		}
 		
-		//console
-		System.out.println("nb of map cases : " + dungeonCases.length);
-		System.out.println("nb of equipments : " + dungeonEquipment.size());
+		//dungeon name
+		String dungeonName = dungeonNameTf.getText();
+		
+		//create Data Transfert Object
+		Dungeon dungeon = new Dungeon(dungeonName, 0, mapHeight, Integer.parseInt(lvlDiffTxtValue.getText()), dungeonEquipment, dungeonCases);
+		
+		
+		//transform to JSON
+		try {
+			ObjectMapper mapper = new ObjectMapper();
+			String jsonString = mapper.writeValueAsString(dungeon);
+			System.out.println(jsonString);
+			
+			
+
+			try {
+				fetchToApi("POST", "http://localhost:8080/dungeons/", new HashMap<>(), jsonString);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				return false;
+			}
+			
+			
+			
+			
+		} catch (JsonProcessingException e) {
+			e.printStackTrace();
+			return false;
+		}
+		
+		
+		
+		
+		return true;
 	}
+	
+
+	
+
+	
+	
+
+	ActionListener dungeonMapListener = new ActionListener() {
+	    public void actionPerformed(ActionEvent e) {
+	    	if(currentItemSelectedId != -1) {
+		        JButton clickedButton = dungeonMapButtons.get(dungeonMapButtons.indexOf(e.getSource()));
+		        clickedButton.setActionCommand(String.valueOf(currentItemSelectedId));
+		        clickedButton.setIcon(currentIcon);
+	    	}
+	    }
+	};
+	
+	ActionListener toolBoxListener = new ActionListener() {
+	    public void actionPerformed(ActionEvent e) {
+	        JButton clickedButton = toolBoxButtons.get(toolBoxButtons.indexOf(e.getSource()));
+	        currentItemSelectedId = Integer.parseInt(clickedButton.getActionCommand());
+	        currentIcon = (ImageIcon) clickedButton.getIcon();
+	    }
+	};
+
+	ActionListener iaEquipmentListener = new ActionListener() {
+		public void actionPerformed(ActionEvent e) {
+	        JButton clickedButton = iaEquipmentButtons.get(iaEquipmentButtons.indexOf(e.getSource()));
+			if(clickedButton.getActionCommand() == "true") {
+				clickedButton.setActionCommand("false");
+				clickedButton.setBorder(new LineBorder(Color.gray));
+			}else {
+				clickedButton.setActionCommand("true");
+				clickedButton.setBorder(new LineBorder(Color.red));
+			}
+		}
+	};
+	
+	
+	
 	
 	/**
 	 * Initialize the contents of the frame.
@@ -270,13 +500,12 @@ public class window {
 		lvlDiffTxt.setBounds(0, 190, 100, 20);
 		infosPanel.add(lvlDiffTxt);
 		
-		lvlDiffTxtValue = new JTextField();
+		lvlDiffTxtValue = new JTextField("0");
 		lvlDiffTxtValue.setEditable(false);
 		lvlDiffTxtValue.setColumns(10);
 		lvlDiffTxtValue.setBounds(105, 190, 100, 20);
 		infosPanel.add(lvlDiffTxtValue);
 
-		//IaEquipmentPanel.setBounds(1, 340, 245, 340); //169-283
 		IaEquipmentPanel.setBounds(41, 340, 169, 283); //169-283
 		leftPanel.add(IaEquipmentPanel);
 		IaEquipmentPanel.setLayout(new GridLayout(5, 3, 2, 2));
@@ -330,11 +559,11 @@ public class window {
 		mainPanel.add(centerTopPanel);
 		centerTopPanel.setLayout(null);
 		
-		dungeonName = new JTextField();
-		dungeonName.setText("Choose a name for your dungeon");
-		dungeonName.setBounds(0, 0, 750, 60);
-		centerTopPanel.add(dungeonName);
-		dungeonName.setColumns(10);
+		dungeonNameTf = new JTextField();
+		dungeonNameTf.setText("Choose a name for your dungeon");
+		dungeonNameTf.setBounds(0, 0, 750, 60);
+		centerTopPanel.add(dungeonNameTf);
+		dungeonNameTf.setColumns(10);
 		
 		
 		mainPanel.add(centerPanel);
@@ -463,41 +692,6 @@ public class window {
 		});
 		pageSelectorPanel.add(nextPageBtn);
 	}
-	
-
-
-	ActionListener dungeonMapListener = new ActionListener() {
-	    public void actionPerformed(ActionEvent e) {
-	    	if(currentItemSelectedId != -1) {
-		        JButton clickedButton = dungeonMapButtons.get(dungeonMapButtons.indexOf(e.getSource()));
-		        clickedButton.setActionCommand(String.valueOf(currentItemSelectedId));
-		        clickedButton.setIcon(currentIcon);
-	    	}
-	    }
-	};
-	
-	ActionListener toolBoxListener = new ActionListener() {
-	    public void actionPerformed(ActionEvent e) {
-	        JButton clickedButton = toolBoxButtons.get(toolBoxButtons.indexOf(e.getSource()));
-	        currentItemSelectedId = Integer.parseInt(clickedButton.getActionCommand());
-	        currentIcon = (ImageIcon) clickedButton.getIcon();
-	    }
-	};
-
-	ActionListener iaEquipmentListener = new ActionListener() {
-		public void actionPerformed(ActionEvent e) {
-	        JButton clickedButton = iaEquipmentButtons.get(iaEquipmentButtons.indexOf(e.getSource()));
-			if(clickedButton.getActionCommand() == "true") {
-				clickedButton.setActionCommand("false");
-				clickedButton.setBorder(new LineBorder(Color.gray));
-			}else {
-				clickedButton.setActionCommand("true");
-				clickedButton.setBorder(new LineBorder(Color.red));
-			}
-		}
-	};
-	
-	
 	
 
 }
