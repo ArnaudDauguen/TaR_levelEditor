@@ -15,6 +15,7 @@ import javax.swing.JTextField;
 import javax.swing.border.LineBorder;
 
 import DTO.Dungeon;
+import DTO.Ressources;
 
 import javax.imageio.stream.ImageInputStream;
 import javax.swing.ImageIcon;
@@ -90,11 +91,10 @@ public class window {
 	private ArrayList<ImageIcon> monsterIcon = new ArrayList<>();
 	private ArrayList<ImageIcon> otherIcon = new ArrayList<>();
 	
+	//DTO
+	private Ressources ressources;
 	
 	
-	
-	//TODO temporary variables
-	private int nbInputRessourcesTmp = 7;
 	
 	/**
 	 * Launch the application.
@@ -117,40 +117,48 @@ public class window {
 	 */
 	public window() {
 		initialize();
-		loadDatas();
+		loadDatas(); //TODO if false write error message (API not responding)
 		installMap();
 		installToolBox();
 	}
 
-	/**
-	 * TODO Call to API for various datas
-	 */
 	private boolean loadDatas() {
-		Map<String, String> parameters = new HashMap<>();
 		try {
-			fetchToApi("GET", "http://localhost:8080/ressources", parameters);
+			HttpURLConnection con = createApiRequest("GET", "http://localhost:8080/ressources/ids", new HashMap<>());
+			
+			int status = con.getResponseCode();
+			InputStream iStream = con.getInputStream();
+			InputStreamReader reader = new InputStreamReader(iStream);
+			BufferedReader in = new BufferedReader(reader);
+			String inputLine;
+			StringBuffer content = new StringBuffer();
+			while ((inputLine = in.readLine()) != null) {
+			    content.append(inputLine);
+			}
+			in.close();
+			con.disconnect();
+			ObjectMapper objectMapper = new ObjectMapper();
+			ressources = objectMapper.readValue(content.toString(), Ressources.class);
+			
+			
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 			return false;
 		}
-		for(int i = 0; i < nbInputRessourcesTmp; i++) {
-			String path = "ressources/icon" + i + ".png";
+		ArrayList<Integer> ids = ressources.getAllPlacables();
+		for(int i = 0; i < ids.size(); i++) {
+			String path = "ressources/icon" + ids.get(i) + ".png";
 			File f = new File(path);
-			switch ((int) (Math.floor(Math.random() * 3))) {
-			case 0:
-				terrainIds.add(i);
+			if(ids.get(i) < 1000) {
+				terrainIds.add(ids.get(i));
 				terrainIcon.add(f.exists() ? new ImageIcon(path) : imgNotFound);
-				break;
-			case 1:
-				monsterIds.add(i);
+			}else if(ids.get(i) < 3000) {
+				monsterIds.add(ids.get(i));
 				monsterIcon.add(f.exists() ? new ImageIcon(path) : imgNotFound);
-				break;
-
-			default:
-				otherIds.add(i);
+			}else {
+				otherIds.add(ids.get(i));
 				otherIcon.add(f.exists() ? new ImageIcon(path) : imgNotFound);
-				break;
 			}
 		}
 		currentItemsIds = terrainIds;
@@ -197,57 +205,7 @@ public class window {
 	/*
 	 * Map<String, String> parameters = new HashMap<>() -> url parametres, ?limit=10&offset=10
 	 */
-	private void fetchToApi(String method, String inUrl, Map<String, String> parameters) throws Exception {
-		//Create params string
-		StringBuilder paramStringBuilder = new StringBuilder();
-        for (Map.Entry<String, String> entry : parameters.entrySet()) {
-          paramStringBuilder.append(URLEncoder.encode(entry.getKey(), "UTF-8"));
-          paramStringBuilder.append("=");
-          paramStringBuilder.append(URLEncoder.encode(entry.getValue(), "UTF-8"));
-          paramStringBuilder.append("&");
-        }
-        String paramString = paramStringBuilder.toString();
-        paramString = paramString.length() > 0 ? paramString.substring(0, paramString.length() - 1) : paramString;
-        
-        //Create Request
-		URL url = parameters.size() == 0 ? new URL(inUrl) : new URL(inUrl + "?" + paramString);
-		HttpURLConnection con = (HttpURLConnection) url.openConnection();
-		con.setRequestMethod(method);
-		
-        //Conf request
-		con.setRequestProperty("Content-Type", "application/json");
-		con.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:72.0) Gecko/20100101 Firefox/72.0");
-		con.setConnectTimeout(5000);
-		con.setReadTimeout(5000);
-		
-		
-		
-		//Read response
-		int status = con.getResponseCode();
-		InputStream bb = con.getInputStream();
-		InputStreamReader aa = new InputStreamReader(bb);
-		BufferedReader in = new BufferedReader(aa);
-		String inputLine;
-		StringBuffer content = new StringBuffer();
-		while ((inputLine = in.readLine()) != null) {
-		    content.append(inputLine);
-		}
-		in.close();
-		con.disconnect();
-		
-		
-		System.out.println(content.toString());
-
-		//TODO Parse json
-		
-		
-	}
-
-	
-	/*
-	 * Map<String, String> parameters = new HashMap<>() -> url parametres, ?limit=10&offset=10
-	 */
-	private void fetchToApi(String method, String inUrl, Map<String, String> parameters, String jsonBodyString) throws Exception {
+	private HttpURLConnection createApiRequest(String method, String inUrl, Map<String, String> parameters) throws Exception {
 		//Create params string
 		StringBuilder paramStringBuilder = new StringBuilder();
         for (Map.Entry<String, String> entry : parameters.entrySet()) {
@@ -266,30 +224,23 @@ public class window {
         con.setDoOutput(true);
         con.setRequestMethod(method);
         con.setRequestProperty("Content-Type", "application/json");
-        // linec.setRequestProperty("Authorization", "Bearer " + "1djCb/mXV+KtryMxr6i1bXw");
-
-//        OutputStreamWriter writer = new OutputStreamWriter(con.getOutputStream(), "UTF-8");
-//        writer.write("{\"userId\": 100,\"id\": 100,\"title\": \"main title\",\"body\": \"main body\"}");
+        
+		return con;
+        
+        /*
+        POST write body
         con.getOutputStream().write(jsonBodyString.getBytes());
-		
-		
-        
-        
-        
-        
-        
-        BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+		BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
         String inputLine;
 
         while ((inputLine = in.readLine()) != null)
             System.out.println(inputLine);
         in.close();
         
-        
+        */
         
         /*
-		
-		//Read response
+		GET Read response
 		int status = con.getResponseCode();
 		InputStream bb = con.getInputStream();
 		InputStreamReader aa = new InputStreamReader(bb);
@@ -304,8 +255,6 @@ public class window {
 		
 		
 		System.out.println(content.toString());
-
-		//TODO Parse json
 		*/
 		
 	}
@@ -314,16 +263,18 @@ public class window {
 		//save map
 		int[] dungeonCases = new int[mapHeight * mapWidth];
 		int[][] dungeonCasesForCheck = new int[mapHeight][mapWidth];
-		for (int i = 0; i < mapHeight; i++) {
-			for (int j = 0; j < mapWidth; i++) {
-				dungeonCases[i * j] = Integer.parseInt(dungeonMapButtons.get(i * j).getActionCommand());
-				dungeonCasesForCheck[i][j] = Integer.parseInt(dungeonMapButtons.get(i * j).getActionCommand());
+		for (int x = 0; x < mapHeight; x++) {
+			for (int y = 0; y < mapWidth; y++) {
+				dungeonCases[x * mapWidth + y] = Integer.parseInt(dungeonMapButtons.get(x * mapWidth + y).getActionCommand());
+				dungeonCasesForCheck[x][y] = Integer.parseInt(dungeonMapButtons.get(x * mapWidth + y).getActionCommand());
 			}
 		}
 		
 		int wallId = 1, entrenceId = 2, throneId = 3;
-		if(!Dungeon.isCompletable(dungeonCasesForCheck, mapHeight, mapWidth, entrenceId, throneId, wallId))
+		if(!Dungeon.isCompletable(dungeonCasesForCheck, mapHeight, mapWidth, entrenceId, throneId, wallId)) {
+			System.out.println("No highway found to go to Throne from Entrence");
 			return false;
+		}
 		
 		//save equipment
 		ArrayList<Integer> dungeonEquipmentArray = new ArrayList<Integer>();
@@ -353,14 +304,23 @@ public class window {
 		
 		//transform to JSON
 		try {
+			//convert DTO to JSON string
 			ObjectMapper mapper = new ObjectMapper();
 			String jsonString = mapper.writeValueAsString(dungeon);
-			System.out.println(jsonString);
-			
-			
 
+			//call to API
 			try {
-				fetchToApi("POST", "http://localhost:8080/dungeons/", new HashMap<>(), jsonString);
+				HttpURLConnection con = createApiRequest("POST", "http://localhost:8080/dungeons/", new HashMap<>());
+				con.getOutputStream().write(jsonString.getBytes());
+				BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+		        String returnLine;
+
+		        while ((returnLine = in.readLine()) != null)
+		        	//TODO check response type
+		            System.out.println("API response " + returnLine);
+		        in.close();
+		        
+		        
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -577,7 +537,6 @@ public class window {
 		
 		JButton btnSaveLevel = new JButton("Save Level");
 		btnSaveLevel.setBounds(325, 0, 100, 35);
-		//TODO action performed
 		btnSaveLevel.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				saveDungeon();

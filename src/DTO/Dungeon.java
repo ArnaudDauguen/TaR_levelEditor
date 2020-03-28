@@ -52,13 +52,20 @@ public class Dungeon {
 		int insertedCasesPerLoop;
 		do {
 			insertedCasesPerLoop = 0;
+			ArrayList<Integer> newArray = new ArrayList<Integer>();
 			for(int caseId : checkedId) {
 				for(int neighbourCaseId : getNeighbourCases(caseId, mapWidth, mapHeight)) {
 					if(neighbourCaseId == throneCaseId)
 						return true;
 					if(map[(int) Math.floor(neighbourCaseId / mapWidth)][neighbourCaseId % mapWidth] != wallId)
-						if(!checkedId.contains(neighbourCaseId))
-							checkedId.add(neighbourCaseId);
+						newArray.add(neighbourCaseId);
+				}
+			}
+			// add new ids and count uniques
+			for(int caseId : newArray) {
+				if(!checkedId.contains(caseId)) {
+					insertedCasesPerLoop++;
+					checkedId.add(caseId);
 				}
 			}
 		}while(insertedCasesPerLoop > 0);
