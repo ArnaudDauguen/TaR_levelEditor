@@ -169,8 +169,8 @@ public class window {
 	}
 	
 	private void installMap() {
-		for(int i = 0; i < mapWidth; i++) {
-			for(int j = 0; j < mapHeight; j++) {
+		for(int i = 0; i < mapHeight; i++) {
+			for(int j = 0; j < mapWidth; j++) {
 				ImageIcon img = new ImageIcon("ressources/icon0.png");
 				JButton bt = new JButton("", img);
 				bt.addActionListener(dungeonMapListener);

@@ -13,7 +13,7 @@ public class Ressources {
 	private List<Integer> terrains = null;
 	private List<Integer> monsters = null;
 	private List<Integer> others = null;
-	
+
 	public Ressources(List<Integer> stuffs, List<Integer> terrains, List<Integer> monsters, List<Integer> others) {
 		super();
 		this.stuffs = stuffs;
@@ -21,7 +21,7 @@ public class Ressources {
 		this.monsters = monsters;
 		this.others = others;
 	}
-	
+
 	public ArrayList<Integer> getAllPlacables(){
 		ArrayList<Integer> allPlacables = new ArrayList<Integer>();
 		allPlacables.addAll(terrains);
@@ -61,12 +61,12 @@ public class Ressources {
 	public void setOthers(List<Integer> others) {
 		this.others = others;
 	}
-	
-	
-	
+
+
+
 }
 
-*/
+ */
 
 
 import java.util.ArrayList;
@@ -82,81 +82,81 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-"stuffs",
-"terrains",
-"monsters",
-"others"
+	"stuffs",
+	"terrains",
+	"monsters",
+	"others"
 })
 public class Ressources {
 
-@JsonProperty("stuffs")
-private List<Integer> stuffs = null;
-@JsonProperty("terrains")
-private List<Integer> terrains = null;
-@JsonProperty("monsters")
-private List<Integer> monsters = null;
-@JsonProperty("others")
-private List<Integer> others = null;
-@JsonIgnore
-private Map<String, Object> additionalProperties = new HashMap<String, Object>();
+	@JsonProperty("stuffs")
+	private List<Integer> stuffs = null;
+	@JsonProperty("terrains")
+	private List<Integer> terrains = null;
+	@JsonProperty("monsters")
+	private List<Integer> monsters = null;
+	@JsonProperty("others")
+	private List<Integer> others = null;
+	@JsonIgnore
+	private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
-@JsonProperty("stuffs")
-public List<Integer> getStuffs() {
-return stuffs;
-}
+	@JsonProperty("stuffs")
+	public List<Integer> getStuffs() {
+		return stuffs;
+	}
 
-@JsonProperty("stuffs")
-public void setStuffs(List<Integer> stuffs) {
-this.stuffs = stuffs;
-}
+	@JsonProperty("stuffs")
+	public void setStuffs(List<Integer> stuffs) {
+		this.stuffs = stuffs;
+	}
 
-@JsonProperty("terrains")
-public List<Integer> getTerrains() {
-return terrains;
-}
+	@JsonProperty("terrains")
+	public List<Integer> getTerrains() {
+		return terrains;
+	}
 
-@JsonProperty("terrains")
-public void setTerrains(List<Integer> terrains) {
-this.terrains = terrains;
-}
+	@JsonProperty("terrains")
+	public void setTerrains(List<Integer> terrains) {
+		this.terrains = terrains;
+	}
 
-@JsonProperty("monsters")
-public List<Integer> getMonsters() {
-return monsters;
-}
+	@JsonProperty("monsters")
+	public List<Integer> getMonsters() {
+		return monsters;
+	}
 
-@JsonProperty("monsters")
-public void setMonsters(List<Integer> monsters) {
-this.monsters = monsters;
-}
+	@JsonProperty("monsters")
+	public void setMonsters(List<Integer> monsters) {
+		this.monsters = monsters;
+	}
 
-@JsonProperty("others")
-public List<Integer> getOthers() {
-return others;
-}
+	@JsonProperty("others")
+	public List<Integer> getOthers() {
+		return others;
+	}
 
-@JsonProperty("others")
-public void setOthers(List<Integer> others) {
-this.others = others;
-}
+	@JsonProperty("others")
+	public void setOthers(List<Integer> others) {
+		this.others = others;
+	}
 
-@JsonAnyGetter
-public Map<String, Object> getAdditionalProperties() {
-return this.additionalProperties;
-}
+	@JsonAnyGetter
+	public Map<String, Object> getAdditionalProperties() {
+		return this.additionalProperties;
+	}
 
-@JsonAnySetter
-public void setAdditionalProperty(String name, Object value) {
-this.additionalProperties.put(name, value);
-}
+	@JsonAnySetter
+	public void setAdditionalProperty(String name, Object value) {
+		this.additionalProperties.put(name, value);
+	}
 
-public ArrayList<Integer> getAllPlacables(){
-	ArrayList<Integer> allPlacables = new ArrayList<Integer>();
-	allPlacables.addAll(terrains);
-	allPlacables.addAll(monsters);
-	allPlacables.addAll(others);
-	return allPlacables;
-}
+	public ArrayList<Integer> getAllPlacables(){
+		ArrayList<Integer> allPlacables = new ArrayList<Integer>();
+		allPlacables.addAll(terrains);
+		allPlacables.addAll(monsters);
+		allPlacables.addAll(others);
+		return allPlacables;
+	}
 
 }
 
