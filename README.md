@@ -19,6 +19,13 @@ You can start the `TaR_levelEditor.jar` file by :
 
 You can found sources in the `src` folder and main fil is `src/UI/window.java`, from this file you can launch the app.
 
+## Creating a dungeon
+To be considered as valid, your dungeon have to contain :
+* at least one Door
+* at least onr Throne
+
+You also have to choose at least 3 equipements for the left list (Bow III is more powerfull than Bow II which is more powerfull than Bow I)
+
 # 3. Pickup API
 Please visit my [first repo](https://github.com/ArnaudDauguen/TaR-api)
 
