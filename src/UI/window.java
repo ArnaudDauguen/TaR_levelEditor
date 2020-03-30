@@ -1,45 +1,33 @@
 package UI;
 
+import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.EventQueue;
+import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.util.ArrayList;
+import java.util.HashMap;
+
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.border.LineBorder;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import java.awt.BorderLayout;
-import java.awt.Button;
-import java.awt.Color;
-
-import javax.swing.JTextField;
-import javax.swing.border.LineBorder;
-
 import DTO.Dungeon;
-import DTO.Ressources;
 import DTO.RessourcesFull;
+import beans.CreateApiRequest;
 import beans.Terrain;
-
-import javax.imageio.stream.ImageInputStream;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import java.awt.GridLayout;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.swing.JLabel;
-import java.awt.event.ActionListener;
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.awt.event.ActionEvent;
 
 
 
@@ -78,6 +66,7 @@ public class window {
 	private JTextField chestsTxtValue;
 	private JTextField stuffsTxtValue;
 	private JTextField lvlDiffTxtValue;
+	private JTextField errorTextField;
 	
 	//datas
 	private int currentItemSelectedId = -1;
@@ -119,18 +108,22 @@ public class window {
 	 */
 	public window() {
 		initialize();
-		loadDatas(); //TODO if false write error message (API not responding)
-		installMap();
-		installToolBox();
-		installStuffBox();
+		if(loadDatas()){
+			installMap();
+			installToolBox();
+			installStuffBox();
+		}
 	}
 
 	private boolean loadDatas() {
 		try {
-			//HttpURLConnection con = createApiRequest("GET", "http://localhost:8080/ressources/ids", new HashMap<>());
-			HttpURLConnection con = createApiRequest("GET", "http://localhost:8080/ressources", new HashMap<>());
+			HttpURLConnection con = new CreateApiRequest("GET", "http://localhost:8080/ressources", new HashMap<>()).getCon();
 			
 			int status = con.getResponseCode();
+			if(!(status >= 200 && status < 300)) {
+				errorTextField.setText("Cannot get ressources");
+				return false;
+			}
 			InputStream iStream = con.getInputStream();
 			InputStreamReader reader = new InputStreamReader(iStream);
 			BufferedReader in = new BufferedReader(reader);
@@ -146,8 +139,7 @@ public class window {
 			
 			
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			errorTextField.setText("API not responding");
 			return false;
 		}
 		ArrayList<Integer> ids = ressources.getAllPlacables();
@@ -217,32 +209,6 @@ public class window {
 		}
 	}
 	
-	/*
-	 * Map<String, String> parameters = new HashMap<>() -> url parametres, ?limit=10&offset=10
-	 */
-	private HttpURLConnection createApiRequest(String method, String inUrl, Map<String, String> parameters) throws Exception {
-		//Create params string
-		StringBuilder paramStringBuilder = new StringBuilder();
-        for (Map.Entry<String, String> entry : parameters.entrySet()) {
-          paramStringBuilder.append(URLEncoder.encode(entry.getKey(), "UTF-8"));
-          paramStringBuilder.append("=");
-          paramStringBuilder.append(URLEncoder.encode(entry.getValue(), "UTF-8"));
-          paramStringBuilder.append("&");
-        }
-        String paramString = paramStringBuilder.toString();
-        paramString = paramString.length() > 0 ? paramString.substring(0, paramString.length() - 1) : paramString;
-        
-        //Create Request
-		URL url = parameters.size() == 0 ? new URL(inUrl) : new URL(inUrl + "?" + paramString);
-		HttpURLConnection con = (HttpURLConnection) (url).openConnection();
-        con.setDoInput(true);
-        con.setDoOutput(true);
-        con.setRequestMethod(method);
-        con.setRequestProperty("Content-Type", "application/json");
-        
-		return con;
-		
-	}
 	
 	private boolean saveDungeon() {
 		//save map
@@ -268,7 +234,7 @@ public class window {
 			}
 		}
 		if(!Dungeon.isCompletable(dungeonCasesForCheck, mapHeight, mapWidth, entrenceId, throneId, wallId)) {
-			System.out.println("No highway found to go to Throne from Entrence");
+			errorTextField.setText("No path found to go to Throne from Entrance");
 			return false;
 		}
 		
@@ -283,8 +249,8 @@ public class window {
 				}
 			}
 		}
-		if(dungeonEquipmentArray.size() == 0) {
-			System.out.println("not enought equipment choosed");
+		if(dungeonEquipmentArray.size() < 3) {
+			errorTextField.setText("not enought equipment choosen, (at least 3)");
 			return false;
 		}
 		//convert array to int[]
@@ -308,7 +274,7 @@ public class window {
 
 			//call to API
 			try {
-				HttpURLConnection con = createApiRequest("POST", "http://localhost:8080/dungeons/", new HashMap<>());
+				HttpURLConnection con = new CreateApiRequest("POST", "http://localhost:8080/dungeons/", new HashMap<>()).getCon();
 				con.getOutputStream().write(jsonString.getBytes());
 				
 				//read response
@@ -324,23 +290,18 @@ public class window {
 				in.close();
 				con.disconnect();
 				
-				System.out.println( status >= 200 && status < 300 ? "Dungeon created!" : "Cannot create dungeon");
+				errorTextField.setText( status >= 200 && status < 300 ? "Dungeon created!" : "Cannot create dungeon");
 		        
 		        
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				errorTextField.setText("API not responding");
 				return false;
 			}
 			
-			
-			
-			
 		} catch (JsonProcessingException e) {
-			e.printStackTrace();
+			errorTextField.setText("Something went wrong");
 			return false;
 		}
-		
 		
 		
 		
@@ -436,24 +397,28 @@ public class window {
 		infosPanel.add(txtStuff);
 		
 		monsterTxtValue = new JTextField();
+		monsterTxtValue.setText("Work In Progress");
 		monsterTxtValue.setEditable(false);
 		monsterTxtValue.setColumns(10);
 		monsterTxtValue.setBounds(105, 65, 100, 20);
 		infosPanel.add(monsterTxtValue);
 		
 		terrainsTxtValue = new JTextField();
+		terrainsTxtValue.setText("Work In Progress");
 		terrainsTxtValue.setEditable(false);
 		terrainsTxtValue.setColumns(10);
 		terrainsTxtValue.setBounds(105, 90, 100, 20);
 		infosPanel.add(terrainsTxtValue);
 		
 		chestsTxtValue = new JTextField();
+		chestsTxtValue.setText("Work In Progress");
 		chestsTxtValue.setEditable(false);
 		chestsTxtValue.setColumns(10);
 		chestsTxtValue.setBounds(105, 115, 100, 20);
 		infosPanel.add(chestsTxtValue);
 		
 		stuffsTxtValue = new JTextField();
+		stuffsTxtValue.setText("Work In Progress");
 		stuffsTxtValue.setEditable(false);
 		stuffsTxtValue.setColumns(10);
 		stuffsTxtValue.setBounds(105, 140, 100, 20);
@@ -523,8 +488,13 @@ public class window {
 			}
 		});
 		centerBottomPanel.add(btnSaveLevel);
-		
-		
+
+		errorTextField = new JTextField();
+		errorTextField.setText("");
+		errorTextField.setEditable(false);
+		errorTextField.setColumns(10);
+		errorTextField.setBounds(486, 0, 260, 35);
+		centerBottomPanel.add(errorTextField);
 		
 		
 		

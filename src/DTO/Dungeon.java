@@ -1,8 +1,6 @@
 package DTO;
 
-import java.awt.List;
 import java.util.ArrayList;
-import java.util.Set;
 
 public class Dungeon {
 	
