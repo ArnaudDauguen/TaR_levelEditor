@@ -241,36 +241,6 @@ public class window {
         con.setRequestProperty("Content-Type", "application/json");
         
 		return con;
-        
-        /*
-        POST write body
-        con.getOutputStream().write(jsonBodyString.getBytes());
-		BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-        String inputLine;
-
-        while ((inputLine = in.readLine()) != null)
-            System.out.println(inputLine);
-        in.close();
-        
-        */
-        
-        /*
-		GET Read response
-		int status = con.getResponseCode();
-		InputStream bb = con.getInputStream();
-		InputStreamReader aa = new InputStreamReader(bb);
-		BufferedReader in = new BufferedReader(aa);
-		String inputLine;
-		StringBuffer content = new StringBuffer();
-		while ((inputLine = in.readLine()) != null) {
-		    content.append(inputLine);
-		}
-		in.close();
-		con.disconnect();
-		
-		
-		System.out.println(content.toString());
-		*/
 		
 	}
 	
@@ -340,14 +310,21 @@ public class window {
 			try {
 				HttpURLConnection con = createApiRequest("POST", "http://localhost:8080/dungeons/", new HashMap<>());
 				con.getOutputStream().write(jsonString.getBytes());
-				BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-		        String returnLine;
-
-		        while ((returnLine = in.readLine()) != null) {
-		        	//TODO check response type
-		            //System.out.println("API response " + returnLine);
-		        }
-		        in.close();
+				
+				//read response
+				int status = con.getResponseCode();
+				InputStream inStream = con.getInputStream();
+				InputStreamReader inStreamReader = new InputStreamReader(inStream);
+				BufferedReader in = new BufferedReader(inStreamReader);
+				String inputLine;
+				StringBuffer content = new StringBuffer();
+				while ((inputLine = in.readLine()) != null) {
+				    content.append(inputLine);
+				}
+				in.close();
+				con.disconnect();
+				
+				System.out.println( status >= 200 && status < 300 ? "Dungeon created!" : "Cannot create dungeon");
 		        
 		        
 			} catch (Exception e) {
