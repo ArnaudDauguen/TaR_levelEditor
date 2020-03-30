@@ -16,6 +16,8 @@ import javax.swing.border.LineBorder;
 
 import DTO.Dungeon;
 import DTO.Ressources;
+import DTO.RessourcesFull;
+import beans.Terrain;
 
 import javax.imageio.stream.ImageInputStream;
 import javax.swing.ImageIcon;
@@ -92,7 +94,7 @@ public class window {
 	private ArrayList<ImageIcon> otherIcon = new ArrayList<>();
 	
 	//DTO
-	private Ressources ressources;
+	private RessourcesFull ressources;
 	
 	
 	
@@ -120,11 +122,13 @@ public class window {
 		loadDatas(); //TODO if false write error message (API not responding)
 		installMap();
 		installToolBox();
+		installStuffBox();
 	}
 
 	private boolean loadDatas() {
 		try {
-			HttpURLConnection con = createApiRequest("GET", "http://localhost:8080/ressources/ids", new HashMap<>());
+			//HttpURLConnection con = createApiRequest("GET", "http://localhost:8080/ressources/ids", new HashMap<>());
+			HttpURLConnection con = createApiRequest("GET", "http://localhost:8080/ressources", new HashMap<>());
 			
 			int status = con.getResponseCode();
 			InputStream iStream = con.getInputStream();
@@ -138,7 +142,7 @@ public class window {
 			in.close();
 			con.disconnect();
 			ObjectMapper objectMapper = new ObjectMapper();
-			ressources = objectMapper.readValue(content.toString(), Ressources.class);
+			ressources = objectMapper.readValue(content.toString(), RessourcesFull.class);
 			
 			
 		} catch (Exception e) {
@@ -200,6 +204,17 @@ public class window {
 		}
 		pickupPanel.revalidate();
 		pickupPanel.repaint();
+	}
+	
+	private void installStuffBox() {
+		for(int i = 0; i < ressources.getStuffs().size(); i++) {
+			if(i >= 15) {
+				break;
+			}
+			JButton btn = iaEquipmentButtons.get(i);
+			btn.setText(ressources.getStuffs().get(i).getName());
+			btn.setEnabled(true);
+		}
 	}
 	
 	/*
@@ -270,7 +285,18 @@ public class window {
 			}
 		}
 		
-		int wallId = 1, entrenceId = 2, throneId = 3;
+		int wallId = 1, entrenceId = 2, throneId = 3; // default values
+		for(Terrain t : ressources.getTerrains()) {
+			if(t.getName().equals("throne")) {
+				throneId = t.getId();
+			}
+			if(t.getName().equals("entrence")) {
+				entrenceId = t.getId();
+			}
+			if(t.getName().equals("wall")) {
+				wallId = t.getId();
+			}
+		}
 		if(!Dungeon.isCompletable(dungeonCasesForCheck, mapHeight, mapWidth, entrenceId, throneId, wallId)) {
 			System.out.println("No highway found to go to Throne from Entrence");
 			return false;
@@ -278,10 +304,12 @@ public class window {
 		
 		//save equipment
 		ArrayList<Integer> dungeonEquipmentArray = new ArrayList<Integer>();
-		for(JButton bt : iaEquipmentButtons) {
-			if(bt.isEnabled()){
-				if(bt.getActionCommand() == "true") {
-					dungeonEquipmentArray.add(iaEquipmentButtons.indexOf(bt));
+		for(int i = 0; i < iaEquipmentButtons.size(); i++) {
+			JButton btn = iaEquipmentButtons.get(i);
+			if(btn.isEnabled()){
+				if(btn.getActionCommand() == "true") {
+					dungeonEquipmentArray.add(ressources.getStuffs().get(i).getId());
+					
 				}
 			}
 		}
@@ -315,9 +343,10 @@ public class window {
 				BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
 		        String returnLine;
 
-		        while ((returnLine = in.readLine()) != null)
+		        while ((returnLine = in.readLine()) != null) {
 		        	//TODO check response type
-		            System.out.println("API response " + returnLine);
+		            //System.out.println("API response " + returnLine);
+		        }
 		        in.close();
 		        
 		        
@@ -469,40 +498,14 @@ public class window {
 		IaEquipmentPanel.setBounds(41, 340, 169, 283); //169-283
 		leftPanel.add(IaEquipmentPanel);
 		IaEquipmentPanel.setLayout(new GridLayout(5, 3, 2, 2));
-		//TODO add equipments
-		JButton btnEmpty = new JButton("");
-		btnEmpty.setEnabled(false);
-
-		JButton btn1 = new JButton("arc");
-		iaEquipmentButtons.add(btn1);
-		IaEquipmentPanel.add(btn1);
-		JButton btn2 = new JButton("");
-		btn2.setEnabled(false);
-		iaEquipmentButtons.add(btn2);
-		IaEquipmentPanel.add(btn2);
-		JButton btn3 = new JButton("");
-		btn3.setEnabled(false);
-		iaEquipmentButtons.add(btn3);
-		IaEquipmentPanel.add(btn3);
-		JButton btn4 = new JButton("epee I");
-		iaEquipmentButtons.add(btn4);
-		IaEquipmentPanel.add(btn4);
-		JButton btn5 = new JButton("epee II");
-		iaEquipmentButtons.add(btn5);
-		IaEquipmentPanel.add(btn5);
-		JButton btn6 = new JButton("epee III");
-		iaEquipmentButtons.add(btn6);
-		IaEquipmentPanel.add(btn6);
-		for(int i = 0; i < 9; i++) {
+		for(int i = 0; i < 15; i++) {
 			JButton btn = new JButton("");
 			btn.setEnabled(false);
+			btn.addActionListener(iaEquipmentListener);
+			btn.setActionCommand("false");
+			btn.setBorder(new LineBorder(Color.gray));
 			iaEquipmentButtons.add(btn);
 			IaEquipmentPanel.add(btn);
-		}
-		for(JButton bt : iaEquipmentButtons) {
-			bt.addActionListener(iaEquipmentListener);
-			bt.setActionCommand("false");
-			bt.setBorder(new LineBorder(Color.gray));
 		}
 		
 		
